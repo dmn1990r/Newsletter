@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="pl" style="background:#000!important;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Newsletter">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<style>html,body{background:#000!important;}</style>
+<title>Newsletter Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+  :root {
+    --black:#000;--d1:#111;--d2:#1a1a1a;--d3:#242424;--d4:#2e2e2e;
+    --brd:#333;--brd2:#444;--gold:#c9973a;--gold2:#e0b86a;
+    --text:#e8e8e8;--t2:#aaa;--t3:#666;
+    --blue:#4a9eca;--green:#4caf7d;--red:#c0392b;--orange:#e0843a;
+    --r:12px;--rs:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html{background:var(--black);}
+  body{background:var(--black);color:var(--text);font-family:'IBM Plex Mono',monospace;min-height:100dvh;padding-bottom:env(safe-area-inset-bottom);}
+
+  /* HEADER */
+  .hdr{padding:14px 20px 0;padding-top:calc(12px + env(safe-area-inset-top));}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;}
+  .app-title{font-size:1.1rem;font-weight:400;}
+  .app-title .acc{color:var(--gold);}
+  .st-badge{display:inline-flex;align-items:center;gap:6px;font-size:0.68rem;color:var(--t2);background:var(--d2);border:1px solid var(--brd);border-radius:20px;padding:5px 10px;white-space:nowrap;flex-shrink:0;}
+  .sdot{width:6px;height:6px;border-radius:50%;background:var(--t3);transition:background .3s;}
+  .sdot.ready{background:var(--green);}
+  .sdot.busy{background:var(--gold);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* SWITCHER */
+  .nl-switch{display:flex;gap:8px;margin-bottom:3px;}
+  .nl-btn{flex:1;padding:10px 8px;border-radius:var(--rs);border:1.5px solid var(--brd);background:var(--d2);color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:0.76rem;cursor:pointer;text-align:center;transition:all .2s;}
+  .nl-btn.apzp{border-color:var(--gold);color:var(--gold);background:#1a1200;}
+  .nl-btn.ait{border-color:var(--blue);color:var(--blue);background:#0a1525;}
+
+  /* TABS */
+  .tabs{display:flex;border-bottom:1px solid var(--brd);overflow-x:auto;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--t3);padding:10px 14px;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .2s,border-color .2s;}
+  .tab.apzp{color:var(--gold);border-bottom-color:var(--gold);}
+  .tab.ait{color:var(--blue);border-bottom-color:var(--blue);}
+  .tab:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* SCREENS */
+  .screen{display:none;padding:18px 20px;flex-direction:column;gap:14px;}
+  .screen.active{display:flex;}
+
+  /* LABELS */
+  .lbl{font-size:0.63rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+  .lbl-action{font-size:0.6rem;color:var(--gold);cursor:pointer;text-transform:none;letter-spacing:.04em;background:none;border:none;font-family:inherit;}
+  .lbl-action:hover{color:var(--gold2);}
+
+  /* CARDS */
+  .card{background:var(--d2);border-radius:var(--r);padding:15px;border:1px solid var(--brd);}
+  .note{background:var(--d2);border-radius:var(--rs);padding:12px 14px;border-left:3px solid var(--gold);font-size:0.73rem;color:var(--t2);line-height:1.6;}
+  .note.blue{border-left-color:var(--blue);}
+  .note.green{border-left-color:var(--green);}
+  .note.orange{border-left-color:var(--orange);}
+
+  /* FIELDS */
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{font-size:0.67rem;color:var(--t2);display:flex;justify-content:space-between;align-items:center;}
+  .field-counter{color:var(--t3);font-size:0.62rem;}
+  .field-counter.warn{color:var(--orange);}
+  .field-counter.over{color:var(--red);}
+  .field input,.field select,.field textarea{background:var(--d3);border:1px solid var(--brd);border-radius:var(--rs);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:0.81rem;padding:11px 12px;outline:none;width:100%;transition:border-color .2s;-webkit-appearance:none;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
+  .field textarea{min-height:280px;resize:vertical;line-height:1.65;}
+  .field select option{background:var(--d3);}
+
+  /* SOURCES */
+  .src-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--d3);border-radius:var(--rs);border:1px solid var(--brd);margin-bottom:6px;}
+  .src-item:last-child{margin-bottom:0;}
+  .src-item.editing{border-color:var(--gold);background:#1a1200;flex-direction:column;align-items:stretch;gap:8px;}
+  .src-badge{font-size:0.56rem;padding:3px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.08em;flex-shrink:0;}
+  .src-badge.gov{background:#1a3040;color:var(--blue);}
+  .src-badge.blog{background:#1a3020;color:var(--green);}
+  .src-badge.news{background:#3a2a10;color:var(--gold);}
+  .src-name{font-size:0.77rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
+  .src-name:hover{color:var(--gold);}
+  .ico-btn{background:none;border:none;cursor:pointer;color:var(--t3);font-size:.85rem;padding:3px 5px;border-radius:4px;flex-shrink:0;transition:color .2s;}
+  .ico-btn:hover{color:var(--gold);}
+  .ico-btn.danger:hover{color:var(--red);}
+
+  .add-row{display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--d3);border-radius:var(--rs);border:1px dashed var(--brd2);margin-top:9px;}
+  .two-col{display:flex;gap:8px;}
+  .two-col .field{flex:1;margin-bottom:0;}
+  .two-col .field:first-child{max-width:92px;}
+
+  /* EXIM */
+  .exim{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap;}
+  input[type=file]{display:none;}
+
+  /* BUTTONS */
+  .btn{font-family:'IBM Plex Mono',monospace;font-size:0.77rem;padding:11px 15px;border-radius:var(--rs);border:none;cursor:pointer;transition:all .18s;text-align:center;-webkit-appearance:none;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-gold{background:var(--gold);color:#000;font-weight:500;}
+  .btn-gold:hover:not(:disabled){background:var(--gold2);}
+  .btn-blue{background:#1a3a54;color:var(--blue);border:1px solid #2a5a80;}
+  .btn-blue:hover:not(:disabled){background:#224870;}
+  .btn-dark{background:var(--d4);color:var(--text);border:1px solid var(--brd2);}
+  .btn-dark:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+  .btn-danger{background:#3a1010;color:#e07070;border:1px solid #5a2020;}
+  .btn-danger:hover:not(:disabled){background:#501818;}
+  .btn-full{width:100%;}
+  .btn-sm{padding:7px 11px;font-size:0.71rem;}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+
+  /* LOADER */
+  .loader{background:var(--d2);border-radius:var(--r);padding:22px 20px;text-align:center;border:1px solid var(--brd);display:none;}
+  .loader.on{display:block;}
+  .spinner{width:28px;height:28px;border:2px solid var(--d4);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 11px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loader-txt{font-size:0.71rem;color:var(--t2);margin-bottom:11px;}
+  .loader-cancel{font-size:.66rem;color:var(--red);background:none;border:1px solid #501a1a;padding:5px 12px;border-radius:5px;cursor:pointer;font-family:inherit;}
+  .loader-cancel:hover{background:#200a0a;}
+
+  /* TOPICS */
+  .topic-card{background:var(--d2);border:1px solid var(--brd);border-radius:var(--r);padding:12px 14px;cursor:pointer;transition:border-color .2s,background .2s;position:relative;}
+  .topic-card.spzp{border-color:var(--gold);background:#1a1500;}
+  .topic-card.sit{border-color:var(--blue);background:#0a1525;}
+  .topic-card.editing{cursor:default;}
+  .chk{position:absolute;top:12px;right:12px;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--brd2);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:transparent;transition:all .18s;}
+  .topic-card.spzp .chk{background:var(--gold);border-color:var(--gold);color:#000;}
+  .topic-card.sit .chk{background:var(--blue);border-color:var(--blue);color:#000;}
+  .t-edit-btn{position:absolute;top:12px;right:38px;background:none;border:none;cursor:pointer;color:var(--t3);font-size:.78rem;padding:2px 4px;}
+  .t-edit-btn:hover{color:var(--gold);}
+  .t-src{font-size:.61rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;}
+  .pzp .t-src{color:var(--gold);}
+  .it .t-src{color:var(--blue);}
+  .t-title{font-size:.82rem;font-weight:500;padding-right:48px;margin-bottom:4px;line-height:1.4;}
+  .t-sum{font-size:.73rem;color:var(--t2);line-height:1.55;}
+  .t-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
+  .tag{font-size:.58rem;padding:2px 7px;border-radius:4px;background:var(--d4);color:var(--t3);}
+
+  .sel-count{font-size:.67rem;color:var(--gold);background:#1a1200;border:1px solid #3a2a00;border-radius:6px;padding:5px 10px;display:inline-block;margin-bottom:10px;}
+  .sel-count.it{color:var(--blue);background:#0a1525;border-color:#1a3050;}
+
+  /* STATUS */
+  .status{font-size:.73rem;padding:11px 13px;border-radius:var(--rs);margin-top:9px;display:none;line-height:1.5;}
+  .status.ok{background:#0a2015;border:1px solid #1a5030;color:var(--green);display:block;}
+  .status.err{background:#200a0a;border:1px solid #501a1a;color:#e07070;display:block;}
+  .status.info{background:#0a1525;border:1px solid #1a3050;color:var(--blue);display:block;}
+
+  .ed-bar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px;}
+
+  /* MODAL */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .modal-bg.on{display:flex;}
+  .modal{background:var(--d2);border:1px solid var(--brd);border-radius:var(--r);padding:18px;max-width:420px;width:100%;}
+  .modal h3{font-size:.95rem;margin-bottom:10px;font-weight:500;}
+  .modal p{font-size:.78rem;color:var(--t2);line-height:1.6;margin-bottom:14px;}
+
+  /* ARCHIVE */
+  .archive-item{background:var(--d2);border:1px solid var(--brd);border-radius:var(--rs);padding:11px 13px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s;}
+  .archive-item:hover{border-color:var(--gold);}
+  .arc-icon{font-size:.95rem;}
+  .arc-info{flex:1;min-width:0;}
+  .arc-title{font-size:.76rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .arc-date{font-size:.62rem;color:var(--t3);margin-top:2px;}
+
+  .spacer{height:28px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="app-title"><span class="acc">Newsletter</span> Generator</div>
+    <div class="st-badge"><div class="sdot" id="sdot"></div><span id="stxt">Gotowy</span></div>
+  </div>
+  <div class="nl-switch">
+    <button class="nl-btn apzp" id="nl-pzp" onclick="switchNL('pzp')">⚖️ Newsletter PZP</button>
+    <button class="nl-btn" id="nl-it"  onclick="switchNL('it')">💻 Newsletter IT</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab apzp" id="tab-1" onclick="goTab(1)">Konfiguracja</button>
+  <button class="tab" id="tab-2" onclick="goTab(2)" disabled>Tematy</button>
+  <button class="tab" id="tab-3" onclick="goTab(3)" disabled>Newsletter</button>
+  <button class="tab" id="tab-4" onclick="goTab(4)">Archiwum</button>
+</div>
+
+<!-- ══ SCREEN 1 - KONFIGURACJA ══ -->
+<div class="screen active" id="screen-1">
+
+  <div>
+    <div class="lbl">Klucze API (wspólne dla obu newsletterów)</div>
+    <div class="card">
+      <div class="field">
+        <label>Anthropic API key (analiza Claude)</label>
+        <input id="claude-key" type="password" placeholder="sk-ant-..." autocomplete="off" autocapitalize="off" autocorrect="off">
+      </div>
+      <div class="field">
+        <label>Brevo API key (wysyłka e-mail)</label>
+        <input id="brevo-key" type="password" placeholder="xkeysib-..." autocomplete="off" autocapitalize="off" autocorrect="off">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Model Claude</label>
+        <select id="model-sel">
+          <option value="claude-sonnet-4-5">Claude Sonnet 4.5 (zalecany)</option>
+          <option value="claude-opus-4-5">Claude Opus 4.5 (najlepszy, droższy)</option>
+          <option value="claude-haiku-4-5">Claude Haiku 4.5 (najszybszy, najtańszy)</option>
+        </select>
+      </div>
+    </div>
+    <div class="note" style="margin-top:8px;">
+      Klucze są zapisywane lokalnie po wpisaniu. Nie są nigdzie wysyłane poza oficjalne API Anthropic i Brevo.
+    </div>
+  </div>
+
+  <div>
+    <div class="lbl">
+      <span id="src-lbl">Źródła — Newsletter PZP</span>
+    </div>
+    <div class="card">
+      <div id="src-list"></div>
+      <div class="add-row">
+        <div class="two-col">
+          <div class="field">
+            <label>Typ</label>
+            <select id="new-type">
+              <option value="gov">Rządowy</option>
+              <option value="blog">Blog</option>
+              <option value="news">Newsletter</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Nazwa</label>
+            <input id="new-name" type="text" placeholder="np. Blog UZP">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>URL</label>
+          <input id="new-url" type="url" placeholder="https://..." autocapitalize="none" autocorrect="off">
+        </div>
+        <button class="btn btn-dark btn-sm" onclick="addSrc()">+ Dodaj źródło</button>
+      </div>
+    </div>
+    <div class="exim">
+      <button class="btn btn-dark btn-sm" onclick="exportSrc()">⬇ Eksport JSON</button>
+      <button class="btn btn-dark btn-sm" onclick="document.getElementById('imp').click()">⬆ Import JSON</button>
+      <input type="file" id="imp" accept=".json" onchange="importSrc(event)">
+    </div>
+    <div class="note" style="margin-top:8px;">
+      Stuknij w nazwę źródła aby edytować. Eksport JSON pozwala przenieść listę między urządzeniami (iPhone ↔ Mac).
+    </div>
+  </div>
+
+  <div>
+    <div class="lbl" id="sender-lbl">Ustawienia nadawcy — Newsletter PZP</div>
+    <div class="card">
+      <div class="field">
+        <label>Adres nadawcy</label>
+        <input id="s-email" type="email" placeholder="newsletter@kancelaria.pl" autocapitalize="none" autocorrect="off">
+      </div>
+      <div class="field">
+        <label>Nazwa nadawcy</label>
+        <input id="s-name" type="text" placeholder="Kancelaria XYZ · PZP">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>ID listy Brevo</label>
+        <input id="s-list" type="number" placeholder="np. 12">
+      </div>
+    </div>
+    <div class="note blue" style="margin-top:8px;">
+      Każdy newsletter ma własne ustawienia. Przełącz ⚖️ / 💻 powyżej aby edytować ustawienia drugiego.
+    </div>
+  </div>
+
+  <div>
+    <div class="loader" id="ld1">
+      <div class="spinner"></div>
+      <div class="loader-txt" id="ld1-msg">Analizuję źródła i pobieram aktualne treści...</div>
+      <button class="loader-cancel" onclick="cancelOp()">Anuluj</button>
+    </div>
+    <button class="btn btn-gold btn-full" id="analyze-btn" onclick="analyze()">Analizuj źródła →</button>
+  </div>
+
+  <div class="spacer"></div>
+</div>
+
+<!-- ══ SCREEN 2 - TEMATY ══ -->
+<div class="screen" id="screen-2">
+  <div class="note blue">Zaznacz 3–5 tematów do newslettera. Stuknij ołówek aby edytować temat.</div>
+  <div>
+    <div class="sel-count" id="selc">Zaznaczono: 0 tematów</div>
+    <div id="topics-grid" style="display:flex;flex-direction:column;gap:9px;"></div>
+  </div>
+  <div>
+    <div class="loader" id="ld2">
+      <div class="spinner"></div>
+      <div class="loader-txt">Generuję newsletter...</div>
+      <button class="loader-cancel" onclick="cancelOp()">Anuluj</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-dark" onclick="goTab(1)" style="flex:1;">← Wróć</button>
+      <button class="btn btn-gold" id="gen-btn" onclick="generate()" disabled style="flex:2;">Generuj newsletter →</button>
+    </div>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<!-- ══ SCREEN 3 - NEWSLETTER ══ -->
+<div class="screen" id="screen-3">
+  <div>
+    <div class="lbl">Podgląd i edycja</div>
+    <div class="ed-bar">
+      <button class="btn btn-dark btn-sm" onclick="copyTxt()">📋 Kopiuj (LinkedIn)</button>
+      <button class="btn btn-dark btn-sm" onclick="regen()">↺ Regeneruj</button>
+      <button class="btn btn-dark btn-sm" onclick="saveToArchive()">💾 Zapisz</button>
+    </div>
+    <div class="field">
+      <label>
+        <span>Treść newslettera</span>
+        <span class="field-counter" id="char-counter">0 znaków</span>
+      </label>
+      <textarea id="nl-content" placeholder="Newsletter zostanie wygenerowany..." oninput="updateCounter()"></textarea>
+    </div>
+  </div>
+  <div>
+    <div class="lbl" id="brevo-lbl">Wysyłka Brevo — Newsletter PZP</div>
+    <div class="card">
+      <div class="field" style="margin-bottom:0;">
+        <label>Temat wiadomości</label>
+        <input id="s-subject" type="text" placeholder="Newsletter — tydzień X">
+      </div>
+    </div>
+    <div class="note blue" style="margin-top:8px;" id="brevo-info">
+      Nadawca i lista Brevo — ustawiane w zakładce Konfiguracja.
+    </div>
+  </div>
+  <div>
+    <div class="btn-row">
+      <button class="btn btn-dark btn-sm" onclick="sendTest()" style="flex:1;">Wyślij testowo</button>
+      <button class="btn btn-gold" id="send-btn" onclick="confirmSend()" style="flex:2;">📤 Wyślij do listy</button>
+    </div>
+    <div class="status" id="send-st"></div>
+  </div>
+  <button class="btn btn-dark btn-sm" onclick="goTab(2)" style="align-self:flex-start;">← Zmień tematy</button>
+  <div class="spacer"></div>
+</div>
+
+<!-- ══ SCREEN 4 - ARCHIWUM ══ -->
+<div class="screen" id="screen-4">
+  <div class="note blue">Ostatnie 10 wygenerowanych newsletterów. Stuknij aby wczytać do edytora.</div>
+  <div>
+    <div class="lbl">
+      <span>Archiwum</span>
+      <button class="lbl-action" onclick="clearArchive()">Wyczyść</button>
+    </div>
+    <div id="archive-list"></div>
+  </div>
+  <div class="spacer"></div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h3 id="modal-title">Potwierdź</h3>
+    <p id="modal-text">Czy na pewno?</p>
+    <div class="btn-row" style="justify-content:flex-end;">
+      <button class="btn btn-dark btn-sm" onclick="modalClose()">Anuluj</button>
+      <button class="btn btn-gold btn-sm" id="modal-ok" onclick="modalConfirm()">Potwierdź</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let NL = 'pzp';
+let topics = [];
+let sel = new Set();
+let editingSrc = -1;
+let editingTopic = -1;
+let currentAbort = null;
+let modalCallback = null;
+
+const ACCENT = { pzp:'apzp', it:'ait' };
+
+const DEFAULTS = {
+  pzp: [
+    {type:'gov',  name:'UZP — Aktualności',      url:'https://www.uzp.gov.pl/aktualnosci'},
+    {type:'gov',  name:'KIO — Orzeczenia',        url:'https://www.kio.gov.pl'},
+    {type:'gov',  name:'Sejm — PZP',              url:'https://isap.sejm.gov.pl'},
+    {type:'blog', name:'Zamówienia Publiczne 24', url:'https://www.zamowienia-publiczne.pl'},
+    {type:'news', name:'Prawo dla biznesu',       url:'https://prawodlabiznesu.pl'},
+  ],
+  it: [
+    {type:'blog', name:'Niebezpiecznik',          url:'https://niebezpiecznik.pl'},
+    {type:'blog', name:'Zaufana Trzecia Strona',  url:'https://zaufanatrzeciastrona.pl'},
+    {type:'news', name:'Sekurak',                 url:'https://sekurak.pl'},
+    {type:'gov',  name:'CERT Polska',             url:'https://cert.pl/posts'},
+    {type:'blog', name:'Benchmark.pl',            url:'https://www.benchmark.pl'},
+  ]
+};
+
+const K = {
+  src:    n => `nl_src_${n}`,
+  email:  n => `nl_email_${n}`,
+  name:   n => `nl_name_${n}`,
+  list:   n => `nl_list_${n}`,
+  archive: 'nl_archive',
+};
+
+// ═══════════════════════════════════════════
+// UTILITY: escape HTML (XSS protection)
+// ═══════════════════════════════════════════
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ═══════════════════════════════════════════
+// ISO WEEK NUMBER (correct calc)
+// ═══════════════════════════════════════════
+function isoWeek(d) {
+  const date = new Date(d.getTime());
+  date.setHours(0,0,0,0);
+  // Thursday in current week decides the year
+  date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+  const week1 = new Date(date.getFullYear(), 0, 4);
+  return 1 + Math.round(((date - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+function isoWeekYear(d) {
+  const date = new Date(d.getTime());
+  date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+  return date.getFullYear();
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+window.onload = () => {
+  const ck=localStorage.getItem('nl_ck'), bk=localStorage.getItem('nl_bk');
+  const md=localStorage.getItem('nl_model');
+  if(ck) document.getElementById('claude-key').value=ck;
+  if(bk) document.getElementById('brevo-key').value=bk;
+  if(md) document.getElementById('model-sel').value=md;
+
+  // Auto-save keys on blur
+  document.getElementById('claude-key').addEventListener('blur', e => {
+    if(e.target.value.trim()) localStorage.setItem('nl_ck', e.target.value.trim());
+  });
+  document.getElementById('brevo-key').addEventListener('blur', e => {
+    if(e.target.value.trim()) localStorage.setItem('nl_bk', e.target.value.trim());
+  });
+  document.getElementById('model-sel').addEventListener('change', e => {
+    localStorage.setItem('nl_model', e.target.value);
+  });
+
+  // Auto-save sender fields on blur
+  ['s-email','s-name','s-list'].forEach(id => {
+    document.getElementById(id).addEventListener('blur', () => saveSenderFields());
+  });
+
+  switchNL('pzp');
+  renderArchive();
+};
+
+// ═══════════════════════════════════════════
+// PER-NEWSLETTER STORAGE
+// ═══════════════════════════════════════════
+function getSrc(n) {
+  const s=localStorage.getItem(K.src(n));
+  return s ? JSON.parse(s) : [...DEFAULTS[n]];
+}
+function saveSrc(n, arr) { localStorage.setItem(K.src(n), JSON.stringify(arr)); }
+function saveSenderFields() {
+  localStorage.setItem(K.email(NL), document.getElementById('s-email').value);
+  localStorage.setItem(K.name(NL),  document.getElementById('s-name').value);
+  localStorage.setItem(K.list(NL),  document.getElementById('s-list').value);
+}
+function loadSenderFields() {
+  document.getElementById('s-email').value = localStorage.getItem(K.email(NL))||'';
+  document.getElementById('s-name').value  = localStorage.getItem(K.name(NL))||'';
+  document.getElementById('s-list').value  = localStorage.getItem(K.list(NL))||'';
+}
+
+// ═══════════════════════════════════════════
+// SWITCH NEWSLETTER
+// ═══════════════════════════════════════════
+function switchNL(n) {
+  saveSenderFields();
+  NL = n;
+  editingSrc = -1; editingTopic = -1;
+
+  document.getElementById('nl-pzp').className = 'nl-btn' + (n==='pzp'?' apzp':'');
+  document.getElementById('nl-it').className  = 'nl-btn' + (n==='it' ?' ait':'');
+
+  ['tab-1','tab-2','tab-3','tab-4'].forEach(id => {
+    const t=document.getElementById(id);
+    t.classList.remove('apzp','ait');
+  });
+  document.getElementById('tab-1').classList.add(ACCENT[n]);
+
+  const label = n==='pzp' ? 'PZP' : 'IT';
+  document.getElementById('src-lbl').textContent    = `Źródła — Newsletter ${label}`;
+  document.getElementById('sender-lbl').textContent = `Ustawienia nadawcy — Newsletter ${label}`;
+  document.getElementById('brevo-lbl').textContent  = `Wysyłka Brevo — Newsletter ${label}`;
+
+  topics=[]; sel=new Set();
+  document.getElementById('tab-2').disabled=true;
+  document.getElementById('tab-3').disabled=true;
+  document.getElementById('topics-grid').innerHTML='';
+  document.getElementById('selc').textContent='Zaznaczono: 0 tematów';
+  document.getElementById('selc').className='sel-count'+(n==='it'?' it':'');
+  document.getElementById('nl-content').value='';
+  document.getElementById('s-subject').value='';
+  document.getElementById('send-st').className='status';
+  goTab(1);
+
+  renderSrc();
+  loadSenderFields();
+  updateCounter();
+  setSt('','Gotowy');
+}
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+function goTab(n) {
+  [1,2,3,4].forEach(i=>{
+    document.getElementById(`screen-${i}`).classList.toggle('active',i===n);
+  });
+  [1,2,3,4].forEach(i=>{
+    const t=document.getElementById(`tab-${i}`);
+    t.classList.remove('apzp','ait');
+    if(i===n) t.classList.add(ACCENT[NL]);
+  });
+  if(n===4) renderArchive();
+  window.scrollTo(0,0);
+}
+function enableTab(n) {
+  const t=document.getElementById(`tab-${n}`);
+  t.disabled=false;
+}
+
+// ═══════════════════════════════════════════
+// STATUS DOT
+// ═══════════════════════════════════════════
+function setSt(cls,txt) {
+  document.getElementById('sdot').className='sdot'+(cls?' '+cls:'');
+  document.getElementById('stxt').textContent=txt;
+}
+
+// ═══════════════════════════════════════════
+// SOURCES (with edit)
+// ═══════════════════════════════════════════
+function renderSrc() {
+  const sources=getSrc(NL);
+  if(!sources.length){
+    document.getElementById('src-list').innerHTML=`<div style="color:var(--t3);font-size:.75rem;text-align:center;padding:14px;">Brak źródeł — dodaj poniżej</div>`;
+    return;
+  }
+  document.getElementById('src-list').innerHTML = sources.map((s,i)=>{
+    if(i===editingSrc) {
+      return `<div class="src-item editing">
+        <div class="two-col">
+          <div class="field" style="margin-bottom:0;">
+            <label>Typ</label>
+            <select id="ed-type-${i}">
+              <option value="gov" ${s.type==='gov'?'selected':''}>Rządowy</option>
+              <option value="blog" ${s.type==='blog'?'selected':''}>Blog</option>
+              <option value="news" ${s.type==='news'?'selected':''}>Newsletter</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Nazwa</label>
+            <input id="ed-name-${i}" type="text" value="${esc(s.name)}">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>URL</label>
+          <input id="ed-url-${i}" type="url" value="${esc(s.url)}" autocapitalize="none" autocorrect="off">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-gold btn-sm" onclick="saveEditSrc(${i})">Zapisz</button>
+          <button class="btn btn-dark btn-sm" onclick="cancelEditSrc()">Anuluj</button>
+        </div>
+      </div>`;
+    }
+    return `<div class="src-item">
+      <span class="src-badge ${s.type}">${s.type==='gov'?'Rząd':s.type==='blog'?'Blog':'News'}</span>
+      <span class="src-name" onclick="editSrc(${i})">${esc(s.name)}</span>
+      <button class="ico-btn" onclick="editSrc(${i})" title="Edytuj">✎</button>
+      <button class="ico-btn danger" onclick="rmSrc(${i})" title="Usuń">✕</button>
+    </div>`;
+  }).join('');
+}
+function editSrc(i){editingSrc=i;renderSrc();}
+function cancelEditSrc(){editingSrc=-1;renderSrc();}
+function saveEditSrc(i){
+  const t=document.getElementById(`ed-type-${i}`).value;
+  const n=document.getElementById(`ed-name-${i}`).value.trim();
+  const u=document.getElementById(`ed-url-${i}`).value.trim();
+  if(!n||!u){alert('Wypełnij nazwę i URL.');return;}
+  const arr=getSrc(NL);
+  arr[i]={type:t,name:n,url:u};
+  saveSrc(NL,arr);
+  editingSrc=-1;
+  renderSrc();
+}
+function addSrc() {
+  const t=document.getElementById('new-type').value;
+  const n=document.getElementById('new-name').value.trim();
+  const u=document.getElementById('new-url').value.trim();
+  if(!n||!u){alert('Wypełnij nazwę i URL.');return;}
+  const arr=getSrc(NL); arr.push({type:t,name:n,url:u}); saveSrc(NL,arr); renderSrc();
+  document.getElementById('new-name').value='';
+  document.getElementById('new-url').value='';
+}
+function rmSrc(i) {
+  const arr=getSrc(NL); arr.splice(i,1); saveSrc(NL,arr);
+  if(editingSrc===i) editingSrc=-1;
+  renderSrc();
+}
+
+// ═══════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════
+function exportSrc() {
+  const arr=getSrc(NL);
+  const blob=new Blob([JSON.stringify(arr,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`zrodla-newsletter-${NL}.json`;
+  a.click();
+}
+function importSrc(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try {
+      const arr=JSON.parse(ev.target.result);
+      if(!Array.isArray(arr)) throw new Error('Nieprawidłowy format');
+      // Validate structure
+      const valid = arr.every(s => s && typeof s.name==='string' && typeof s.url==='string' && ['gov','blog','news'].includes(s.type));
+      if(!valid) throw new Error('Niepoprawna struktura źródeł');
+      saveSrc(NL,arr); renderSrc();
+      alert(`Zaimportowano ${arr.length} źródeł.`);
+    } catch(err){ alert('Błąd importu: '+err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+// ═══════════════════════════════════════════
+// ANALYZE - z web_search
+// ═══════════════════════════════════════════
+async function analyze() {
+  const ck=document.getElementById('claude-key').value.trim();
+  if(ck) localStorage.setItem('nl_ck',ck);
+  saveSenderFields();
+  if(!ck){alert('Wpisz klucz API Anthropic.');return;}
+  const sources=getSrc(NL);
+  if(!sources.length){alert('Dodaj co najmniej jedno źródło.');return;}
+
+  setSt('busy','Analizuję...');
+  document.getElementById('ld1').classList.add('on');
+  document.getElementById('ld1-msg').textContent='Pobieram aktualne treści ze źródeł...';
+  document.getElementById('analyze-btn').disabled=true;
+
+  const domain = NL==='pzp'
+    ? 'Prawo Zamówień Publicznych (PZP) w Polsce. Odbiorcy: zamawiający, wykonawcy, prawnicy PZP. Tematy: nowelizacje przepisów, orzeczenia KIO, elektronizacja zamówień, tryb z wolnej ręki, kryteria oceny ofert, RODO w zamówieniach, kontrole UZP, umowy ramowe.'
+    : 'technologie informacyjne, cyberbezpieczeństwo i innowacje IT. Odbiorcy: menedżerowie IT, specjaliści ds. bezpieczeństwa, programiści, CTO. Tematy: cyberbezpieczeństwo, AI/ML, chmura obliczeniowa, naruszenia danych, nowe technologie, prawo IT, startupy technologiczne.';
+
+  const srcTxt=sources.map(s=>`- [${s.type.toUpperCase()}] ${s.name}: ${s.url}`).join('\n');
+
+  const prompt=`Jesteś ekspertem w dziedzinie: ${domain}
+
+Lista źródeł do analizy (sprawdź ich aktualne treści przez web_search):
+${srcTxt}
+
+Użyj narzędzia web_search aby znaleźć NAJNOWSZE artykuły/wpisy z ostatnich 7 dni z tych źródeł lub na powiązane tematy. Następnie wygeneruj 8 propozycji tematów na newsletter w oparciu o RZECZYWIŚCIE znalezione treści.
+
+Po przeszukaniu, odpowiedz WYŁĄCZNIE w JSON (bez markdown, bez komentarzy, bez tekstu poza JSON):
+{"topics":[{"id":1,"title":"konkretny tytuł oparty na znalezionym artykule","source":"nazwa źródła z listy","summary":"2-3 zdania o praktycznym znaczeniu, oparte na rzeczywistej treści","tags":["tag1","tag2"]}]}
+
+WAŻNE: Każdy temat MUSI być powiązany z konkretnym, rzeczywistym artykułem znalezionym przez web_search. Nie wymyślaj tematów ogólnych.`;
+
+  currentAbort = new AbortController();
+  const model = document.getElementById('model-sel').value;
+
+  try {
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      signal: currentAbort.signal,
+      headers:{'Content-Type':'application/json','x-api-key':ck,
+        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model: model,
+        max_tokens: 4000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
+    const d=await r.json();
+
+    // Find text block (after web_search results)
+    const textBlocks = d.content.filter(b => b.type === 'text');
+    if(!textBlocks.length) throw new Error('Brak odpowiedzi tekstowej z modelu');
+
+    const fullText = textBlocks.map(b => b.text).join('\n');
+    // Extract JSON from response
+    const jsonMatch = fullText.match(/\{[\s\S]*"topics"[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('Nie znaleziono JSON w odpowiedzi');
+
+    let parsed;
+    try { parsed = JSON.parse(jsonMatch[0]); }
+    catch(e) { throw new Error('Nieprawidłowy JSON: '+e.message); }
+
+    if(!parsed.topics || !Array.isArray(parsed.topics) || !parsed.topics.length)
+      throw new Error('Brak tematów w odpowiedzi');
+
+    topics = parsed.topics;
+    sel=new Set(); renderTopics(); enableTab(2); goTab(2);
+    setSt('ready', topics.length+' tematów');
+  } catch(e){
+    if(e.name === 'AbortError') {
+      setSt('','Anulowano');
+    } else {
+      setSt('','Błąd');
+      alert('Błąd analizy: '+e.message);
+    }
+  } finally {
+    currentAbort = null;
+    document.getElementById('ld1').classList.remove('on');
+    document.getElementById('analyze-btn').disabled=false;
+  }
+}
+
+function cancelOp() {
+  if(currentAbort) currentAbort.abort();
+}
+
+// ═══════════════════════════════════════════
+// TOPICS (with edit)
+// ═══════════════════════════════════════════
+function renderTopics() {
+  const cls = NL==='pzp'?'pzp':'it';
+  document.getElementById('selc').className='sel-count'+(NL==='it'?' it':'');
+  document.getElementById('topics-grid').innerHTML=topics.map((t,idx)=>{
+    if(idx===editingTopic) {
+      return `<div class="topic-card editing">
+        <div class="field">
+          <label>Tytuł</label>
+          <input id="ed-t-title" type="text" value="${esc(t.title)}">
+        </div>
+        <div class="field">
+          <label>Źródło</label>
+          <input id="ed-t-src" type="text" value="${esc(t.source)}">
+        </div>
+        <div class="field">
+          <label>Opis</label>
+          <textarea id="ed-t-sum" style="min-height:80px;">${esc(t.summary)}</textarea>
+        </div>
+        <div class="field">
+          <label>Tagi (oddzielone przecinkami)</label>
+          <input id="ed-t-tags" type="text" value="${esc((t.tags||[]).join(', '))}">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-gold btn-sm" onclick="saveEditTopic(${idx})">Zapisz</button>
+          <button class="btn btn-dark btn-sm" onclick="cancelEditTopic()">Anuluj</button>
+        </div>
+      </div>`;
+    }
+    const isSelected = sel.has(t.id);
+    const selClass = isSelected ? (NL==='pzp'?' spzp':' sit') : '';
+    return `<div class="topic-card ${cls}${selClass}" id="tp-${t.id}" onclick="toggle(${t.id})">
+      <button class="t-edit-btn" onclick="event.stopPropagation();editTopic(${idx})" title="Edytuj">✎</button>
+      <div class="chk">✓</div>
+      <div class="t-src">${esc(t.source)}</div>
+      <div class="t-title">${esc(t.title)}</div>
+      <div class="t-sum">${esc(t.summary)}</div>
+      <div class="t-tags">${(t.tags||[]).map(g=>`<span class="tag">${esc(g)}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+function editTopic(idx){editingTopic=idx;renderTopics();}
+function cancelEditTopic(){editingTopic=-1;renderTopics();}
+function saveEditTopic(idx){
+  const title=document.getElementById('ed-t-title').value.trim();
+  const src=document.getElementById('ed-t-src').value.trim();
+  const sum=document.getElementById('ed-t-sum').value.trim();
+  const tagsRaw=document.getElementById('ed-t-tags').value.trim();
+  if(!title||!sum){alert('Tytuł i opis są wymagane.');return;}
+  topics[idx]={
+    ...topics[idx],
+    title, source:src, summary:sum,
+    tags: tagsRaw ? tagsRaw.split(',').map(s=>s.trim()).filter(Boolean) : []
+  };
+  editingTopic=-1;
+  renderTopics();
+}
+function toggle(id) {
+  const cls=NL==='pzp'?'spzp':'sit';
+  sel.has(id)?sel.delete(id):sel.add(id);
+  document.getElementById(`tp-${id}`).classList.toggle(cls);
+  const n=sel.size;
+  document.getElementById('selc').textContent=`Zaznaczono: ${n} temat${n===1?'':n<5?'y':'ów'}`;
+  document.getElementById('gen-btn').disabled=n===0;
+}
+
+// ═══════════════════════════════════════════
+// GENERATE
+// ═══════════════════════════════════════════
+async function generate() {
+  const ck=localStorage.getItem('nl_ck')||document.getElementById('claude-key').value.trim();
+  const chosen=topics.filter(t=>sel.has(t.id));
+  document.getElementById('ld2').classList.add('on');
+  document.getElementById('gen-btn').disabled=true;
+  setSt('busy','Generuję...');
+
+  const now = new Date();
+  const w = isoWeek(now);
+  const wy = isoWeekYear(now);
+  const today=now.toLocaleDateString('pl-PL',{day:'numeric',month:'long',year:'numeric'});
+  const tTxt=chosen.map((t,i)=>`${i+1}. ${t.title}\n   Źródło: ${t.source}\n   Kontekst: ${t.summary}`).join('\n\n');
+
+  const isPZP = NL==='pzp';
+  const header = isPZP
+    ? `📋 Newsletter PZP · Tydzień ${w}/${wy}`
+    : `💻 Newsletter IT · Tydzień ${w}/${wy}`;
+  const audience = isPZP
+    ? 'praktyków zamówień publicznych (zamawiający, wykonawcy, prawnicy PZP)'
+    : 'specjalistów IT, menedżerów technologii i osób zainteresowanych cyberbezpieczeństwem';
+  const hashtags = isPZP
+    ? '#PZP #ZamówieniaPubliczne #Przetargi #KIO #PrawoZamówień'
+    : '#IT #Cyberbezpieczeństwo #Technologia #AI #Security #Innovation';
+  const icon = isPZP ? '⚖️' : '🔐';
+
+  const prompt=`Jesteś redaktorem newslettera piszącym do ${audience}.
+
+Wybrane tematy tego wydania:
+${tTxt}
+
+Data: ${today}
+
+Napisz newsletter gotowy na LinkedIn (600–800 słów):
+- Nagłówek: "${header}"
+- Krótki wstęp (2-3 zdania)
+- Każdy temat: podtytuł ${icon} + 3-4 zdania merytorycznego komentarza praktycznego
+- Zakończenie z CTA: subskrypcja i zaproszenie do dyskusji w komentarzach
+- Hashtagi na końcu: ${hashtags}
+
+Tylko tekst newslettera. Bez żadnych komentarzy, bez markdown.`;
+
+  currentAbort = new AbortController();
+  const model = document.getElementById('model-sel').value;
+
+  try {
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      signal: currentAbort.signal,
+      headers:{'Content-Type':'application/json','x-api-key':ck,
+        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model: model,
+        max_tokens: 4000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
+    const d=await r.json();
+    const text = d.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    document.getElementById('nl-content').value=text;
+    const label=isPZP?'PZP':'IT';
+    document.getElementById('s-subject').value=`Newsletter ${label} — tydzień ${w}/${wy}`;
+    enableTab(3); goTab(3);
+    updateCounter();
+    setSt('ready','Gotowy');
+  } catch(e){
+    if(e.name === 'AbortError') {
+      setSt('','Anulowano');
+    } else {
+      setSt('','Błąd');
+      alert('Błąd generowania: '+e.message);
+    }
+  } finally {
+    currentAbort = null;
+    document.getElementById('ld2').classList.remove('on');
+    document.getElementById('gen-btn').disabled=sel.size===0;
+  }
+}
+
+function regen(){
+  if(!sel.size) sel=new Set(topics.map(t=>t.id));
+  generate();
+}
+
+// ═══════════════════════════════════════════
+// CHARACTER COUNTER
+// ═══════════════════════════════════════════
+function updateCounter() {
+  const el = document.getElementById('nl-content');
+  const c = document.getElementById('char-counter');
+  if(!el || !c) return;
+  const n = el.value.length;
+  // LinkedIn newsletter limit ~110000, but post limit 3000
+  c.textContent = `${n.toLocaleString('pl-PL')} znaków`;
+  c.className = 'field-counter';
+  if(n > 3000 && n <= 7000) c.className = 'field-counter warn';
+  if(n > 7000) c.className = 'field-counter over';
+}
+
+// ═══════════════════════════════════════════
+// COPY
+// ═══════════════════════════════════════════
+function copyTxt(){
+  const v=document.getElementById('nl-content').value;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(v).then(()=>showSt('send-st','✅ Skopiowano — wklej na LinkedIn','ok'));
+  } else {
+    const ta=document.getElementById('nl-content');ta.select();document.execCommand('copy');
+    showSt('send-st','✅ Skopiowano','ok');
+  }
+}
+
+// ═══════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════
+function modalShow(title, text, onConfirm) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-text').textContent = text;
+  modalCallback = onConfirm;
+  document.getElementById('modal-bg').classList.add('on');
+}
+function modalClose() {
+  document.getElementById('modal-bg').classList.remove('on');
+  modalCallback = null;
+}
+function modalConfirm() {
+  if(modalCallback) modalCallback();
+  modalClose();
+}
+
+// ═══════════════════════════════════════════
+// BREVO SEND
+// ═══════════════════════════════════════════
+function confirmSend() {
+  const sl = localStorage.getItem(K.list(NL))||document.getElementById('s-list').value;
+  const label = NL==='pzp' ? 'PZP' : 'IT';
+  modalShow(
+    `Wysłać Newsletter ${label}?`,
+    `Wiadomość zostanie wysłana do listy Brevo nr ${sl||'?'}. Tej operacji nie można cofnąć.`,
+    () => sendList()
+  );
+}
+
+let lastSendTime = 0;
+async function _send(toEmail){
+  // Anti-double-send: 30 sec cooldown for list send
+  if(!toEmail) {
+    const now = Date.now();
+    if(now - lastSendTime < 30000) {
+      const left = Math.ceil((30000 - (now - lastSendTime))/1000);
+      showSt('send-st',`⏳ Poczekaj ${left} sek. przed kolejną wysyłką`,'err');
+      return;
+    }
+  }
+
+  const bk=localStorage.getItem('nl_bk')||document.getElementById('brevo-key').value.trim();
+  const se=localStorage.getItem(K.email(NL))||'';
+  const sn=localStorage.getItem(K.name(NL))||'';
+  const sl=localStorage.getItem(K.list(NL))||'';
+  const su=document.getElementById('s-subject').value.trim();
+  const ct=document.getElementById('nl-content').value;
+  if(!bk){alert('Brak klucza Brevo — wróć do Konfiguracji.');return;}
+  if(!se){alert('Brak adresu nadawcy — wróć do Konfiguracji.');return;}
+  if(!su){alert('Wpisz temat wiadomości.');return;}
+  if(!toEmail&&!sl){alert('Brak ID listy Brevo — wróć do Konfiguracji.');return;}
+  if(!ct.trim()){alert('Newsletter jest pusty.');return;}
+
+  document.getElementById('send-btn').disabled = true;
+  showSt('send-st','⏳ Wysyłam...','info');
+
+  const html=`<html><body style="font-family:Georgia,serif;max-width:660px;margin:0 auto;padding:32px 20px;color:#1a1a1a;line-height:1.75;">${esc(ct).replace(/\n/g,'<br>')}</body></html>`;
+  const body={sender:{name:sn||'Newsletter',email:se},subject:su,htmlContent:html,
+    ...(toEmail?{to:[{email:toEmail}]}:{listIds:[parseInt(sl)]})};
+
+  try{
+    const r=await fetch('https://api.brevo.com/v3/smtp/email',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','api-key':bk},
+      body:JSON.stringify(body)
+    });
+    const d=await r.json();
+    if(r.ok){
+      showSt('send-st',`✅ ${toEmail?'Test wysłany na '+toEmail:'Newsletter wysłany do listy!'}`,'ok');
+      if(!toEmail) lastSendTime = Date.now();
+      // Auto-save to archive after send
+      saveToArchive(true);
+    } else {
+      showSt('send-st','❌ Błąd Brevo: '+(d.message||JSON.stringify(d)),'err');
+    }
+  }catch(e){
+    showSt('send-st','❌ Błąd: '+e.message,'err');
+  } finally {
+    setTimeout(() => { document.getElementById('send-btn').disabled = false; }, 30000);
+  }
+}
+function sendTest(){
+  const se=localStorage.getItem(K.email(NL))||document.getElementById('s-email').value.trim();
+  if(!se){alert('Brak adresu nadawcy.');return;}
+  _send(se);
+}
+function sendList(){_send(null);}
+
+function showSt(id,msg,cls){
+  const el=document.getElementById(id);
+  el.textContent=msg; el.className='status '+cls;
+  // Scroll into view
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ═══════════════════════════════════════════
+// ARCHIWUM
+// ═══════════════════════════════════════════
+function getArchive() {
+  const a = localStorage.getItem(K.archive);
+  return a ? JSON.parse(a) : [];
+}
+function saveToArchive(silent) {
+  const ct = document.getElementById('nl-content').value;
+  const su = document.getElementById('s-subject').value;
+  if(!ct.trim()) { if(!silent) alert('Newsletter jest pusty.'); return; }
+
+  const arc = getArchive();
+  const entry = {
+    id: Date.now(),
+    nl: NL,
+    subject: su || `Newsletter ${NL.toUpperCase()}`,
+    content: ct,
+    date: new Date().toISOString()
+  };
+  arc.unshift(entry);
+  // Keep last 10
+  if(arc.length > 10) arc.length = 10;
+  localStorage.setItem(K.archive, JSON.stringify(arc));
+  if(!silent) showSt('send-st','💾 Zapisano w archiwum','ok');
+  renderArchive();
+}
+function renderArchive() {
+  const arc = getArchive();
+  const el = document.getElementById('archive-list');
+  if(!el) return;
+  if(!arc.length) {
+    el.innerHTML = `<div style="color:var(--t3);font-size:.75rem;text-align:center;padding:18px;">Archiwum jest puste</div>`;
+    return;
+  }
+  el.innerHTML = arc.map(a => {
+    const date = new Date(a.date);
+    const dateStr = date.toLocaleDateString('pl-PL') + ' · ' + date.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+    const icon = a.nl === 'pzp' ? '⚖️' : '💻';
+    return `<div class="archive-item" onclick="loadFromArchive(${a.id})">
+      <div class="arc-icon">${icon}</div>
+      <div class="arc-info">
+        <div class="arc-title">${esc(a.subject)}</div>
+        <div class="arc-date">${dateStr}</div>
+      </div>
+      <button class="ico-btn danger" onclick="event.stopPropagation();deleteArchive(${a.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+function loadFromArchive(id) {
+  const arc = getArchive();
+  const entry = arc.find(a => a.id === id);
+  if(!entry) return;
+  // Switch newsletter if needed
+  if(entry.nl !== NL) switchNL(entry.nl);
+  document.getElementById('nl-content').value = entry.content;
+  document.getElementById('s-subject').value = entry.subject;
+  enableTab(3);
+  goTab(3);
+  updateCounter();
+  setSt('ready','Wczytano z archiwum');
+}
+function deleteArchive(id) {
+  const arc = getArchive().filter(a => a.id !== id);
+  localStorage.setItem(K.archive, JSON.stringify(arc));
+  renderArchive();
+}
+function clearArchive() {
+  modalShow('Wyczyścić archiwum?', 'Wszystkie zapisane newslettery zostaną trwale usunięte.', () => {
+    localStorage.removeItem(K.archive);
+    renderArchive();
+  });
+}
+</script>
+</body>
+</html>
